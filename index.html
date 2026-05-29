@@ -465,6 +465,15 @@
       '鲲': 'images/creature_kunpeng.png',
       '鹏': 'images/creature_kunpeng.png',
       '梼杌': 'images/qiongqi_v2.png',
+      '应龙': 'images/yinglong.png',
+      '烛龙': 'images/zhulong.png',
+      '九尾狐': 'images/ninetails.png',
+      '刑天': 'images/xingtian.png',
+      '夔': 'images/kui.png',
+      '蚩尤': 'images/chiyou.png',
+      '共工': 'images/gonggong.png',
+      '夸父': 'images/kuaifu.png',
+      '开明兽': 'images/kaimingshou.png',
     };
 
     // 根据阵营分类卡牌
@@ -672,7 +681,8 @@
       el2.style.border = '3px dashed #8B0000';
       el2.style.background = 'rgba(139,0,0,0.1)';
 
-      if (state.p1Deck.length === 0 && state.p2Deck.length === 0) {
+      // 任意一方牌库空了则游戏结束
+      if (state.p1Deck.length === 0 || state.p2Deck.length === 0) {
         showResult();
         return;
       }
