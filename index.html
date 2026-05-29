@@ -233,6 +233,16 @@
     .battle-card-series { font-size: 0.9rem; color: #888; margin-bottom: 10px; }
     .battle-card-stats { font-size: 1.8rem; color: #ffd700; }
     .battle-card-skill { font-size: 1rem; color: #aaa; margin-top: 10px; font-style: italic; }
+    .battle-card-desc { 
+      font-size: 0.85rem; 
+      color: #ccc; 
+      margin-top: 8px; 
+      line-height: 1.4;
+      max-height: 0;
+      overflow: hidden;
+      transition: max-height 0.3s ease;
+    }
+    .battle-card:hover .battle-card-desc { max-height: 100px; }
 
     .vs-text {
       font-size: 4rem;
@@ -623,6 +633,7 @@
         <div class="battle-card-series">${card1.series} · ${card1.faction}</div>
         <div class="battle-card-stats">${atk1}</div>
         <div class="battle-card-skill">${card1.skill}${skillActive1 ? ' ✨' : ''}</div>
+        <div class="battle-card-desc">📜 ${card1.desc || '山海经记载的异兽'}</div>
       `;
       
       card2El.className = 'battle-card xiong' + (winner === 2 ? ' win' : ' lose');
@@ -632,6 +643,7 @@
         <div class="battle-card-series">${card2.series} · ${card2.faction}</div>
         <div class="battle-card-stats">${atk2}</div>
         <div class="battle-card-skill">${card2.skill}${skillActive2 ? ' ✨' : ''}</div>
+        <div class="battle-card-desc">📜 ${card2.desc || '山海经记载的异兽'}</div>
       `;
       
       document.getElementById('battleResult').textContent = resultText;
