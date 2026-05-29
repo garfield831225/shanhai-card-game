@@ -1,0 +1,668 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>山海经卡牌大战 - 双人对战</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    
+    body {
+      font-family: 'Microsoft YaHei', 'SimSun', serif;
+      background: linear-gradient(135deg, #1a0a0a 0%, #2d1a1a 50%, #1a0a0a 100%);
+      color: #fff;
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    /* 首页 */
+    #startScreen {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      padding: 20px;
+      text-align: center;
+      background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><text y="50" font-size="50" fill="rgba(139,0,0,0.1)">山海</text></svg>');
+    }
+
+    .game-title {
+      font-size: clamp(2.5rem, 10vw, 5rem);
+      font-weight: 900;
+      background: linear-gradient(135deg, #ffd700, #fff, #ffd700);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      margin-bottom: 10px;
+      text-shadow: 0 0 30px rgba(255, 215, 0, 0.5);
+      font-family: 'SimSun', 'STKaiti', serif;
+    }
+
+    .game-subtitle {
+      font-size: 1.3rem;
+      color: #8B0000;
+      margin-bottom: 20px;
+      letter-spacing: 5px;
+    }
+
+    .card-count {
+      font-size: 1rem;
+      color: #666;
+      margin-bottom: 40px;
+    }
+
+    .start-btn {
+      padding: 25px 80px;
+      font-size: 1.8rem;
+      font-weight: bold;
+      border: none;
+      border-radius: 60px;
+      background: linear-gradient(135deg, #8B0000, #4a0000);
+      color: #ffd700;
+      cursor: pointer;
+      box-shadow: 0 15px 40px rgba(139, 0, 0, 0.4);
+      transition: all 0.3s;
+      font-family: 'SimSun', serif;
+    }
+
+    .start-btn:hover {
+      transform: translateY(-8px) scale(1.05);
+      box-shadow: 0 20px 50px rgba(139, 0, 0, 0.6);
+    }
+
+    /* 游戏界面 */
+    #gameScreen {
+      display: none;
+      flex-direction: column;
+      min-height: 100vh;
+    }
+
+    /* 计分板 */
+    .scoreboard {
+      display: flex;
+      justify-content: space-around;
+      padding: 15px;
+      background: rgba(0,0,0,0.7);
+      border-bottom: 3px solid #8B0000;
+    }
+
+    .score-box {
+      text-align: center;
+      padding: 10px 30px;
+    }
+
+    .score-box.shen { border-right: 2px solid #ffd700; }
+    .score-box.xiong { border-left: 2px solid #8B0000; }
+
+    .score-label {
+      font-size: 1rem;
+      color: #888;
+      margin-bottom: 5px;
+    }
+
+    .score-value {
+      font-size: 2.5rem;
+      font-weight: bold;
+      color: #ffd700;
+    }
+
+    /* 玩家区域 */
+    .player-zone {
+      flex: 1;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .player-zone.top {
+      background: linear-gradient(to bottom, rgba(139, 0, 0, 0.3), transparent);
+    }
+
+    .player-zone.bottom {
+      background: linear-gradient(to top, rgba(139, 0, 0, 0.3), transparent);
+    }
+
+    .player-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 15px;
+    }
+
+    .player-name {
+      font-size: 1.5rem;
+      font-weight: bold;
+    }
+
+    .player-name.shen { color: #ffd700; }
+    .player-name.xiong { color: #8B0000; }
+
+    .deck-info {
+      background: rgba(0,0,0,0.3);
+      padding: 10px 20px;
+      border-radius: 20px;
+      display: flex;
+      gap: 20px;
+      align-items: center;
+    }
+
+    .deck-count {
+      font-size: 1.2rem;
+      color: #ffd700;
+    }
+
+    /* 出牌按钮 */
+    .draw-btn {
+      padding: 15px 40px;
+      font-size: 1.3rem;
+      font-weight: bold;
+      border: 3px solid #ffd700;
+      border-radius: 30px;
+      background: linear-gradient(135deg, #8B0000, #4a0000);
+      color: #ffd700;
+      cursor: pointer;
+      transition: all 0.3s;
+      font-family: 'SimSun', serif;
+    }
+
+    .draw-btn:hover {
+      transform: scale(1.1);
+      box-shadow: 0 10px 30px rgba(139, 0, 0, 0.5);
+    }
+
+    .draw-btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    /* 战斗弹窗 */
+    #battleModal {
+      display: none;
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(0,0,0,0.95);
+      z-index: 100;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+
+    .battle-title {
+      font-size: 2.5rem;
+      color: #ffd700;
+      margin-bottom: 30px;
+      text-shadow: 0 0 20px rgba(255, 215, 0, 0.5);
+      font-family: 'SimSun', serif;
+    }
+
+    .battle-cards {
+      display: flex;
+      gap: 60px;
+      align-items: center;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+
+    .battle-card {
+      width: 200px;
+      padding: 25px;
+      border-radius: 20px;
+      text-align: center;
+      background: #1a0a0a;
+      border: 5px solid #555;
+      position: relative;
+    }
+
+    .battle-card img {
+      width: 100%;
+      height: 150px;
+      object-fit: cover;
+      border-radius: 10px;
+      margin-bottom: 15px;
+    }
+
+    .battle-card.shen { border-color: #ffd700; }
+    .battle-card.xiong { border-color: #8B0000; }
+    .battle-card.win { border-color: #0f0; box-shadow: 0 0 40px rgba(0,255,0,0.6); }
+    .battle-card.lose { border-color: #f00; opacity: 0.7; }
+
+    .battle-card-icon { font-size: 4rem; margin-bottom: 10px; }
+    .battle-card-name { font-size: 1.3rem; font-weight: bold; margin-bottom: 5px; color: #ffd700; }
+    .battle-card-series { font-size: 0.9rem; color: #888; margin-bottom: 10px; }
+    .battle-card-stats { font-size: 1.8rem; color: #ffd700; }
+    .battle-card-skill { font-size: 1rem; color: #aaa; margin-top: 10px; font-style: italic; }
+
+    .vs-text {
+      font-size: 4rem;
+      font-weight: 900;
+      color: #8B0000;
+      text-shadow: 0 0 30px rgba(139, 0, 0, 0.7);
+      animation: pulse 1s ease-in-out infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.1); }
+    }
+
+    .battle-result {
+      font-size: 2.2rem;
+      font-weight: bold;
+      padding: 25px 50px;
+      border-radius: 20px;
+      margin: 30px 0;
+      font-family: 'SimSun', serif;
+    }
+
+    .battle-result.win { background: rgba(0,255,0,0.2); color: #0f0; }
+    .battle-result.lose { background: rgba(255,0,0,0.2); color: #f00; }
+
+    .continue-btn {
+      padding: 20px 60px;
+      font-size: 1.5rem;
+      border: none;
+      border-radius: 35px;
+      background: linear-gradient(135deg, #8B0000, #4a0000);
+      color: #ffd700;
+      font-weight: bold;
+      cursor: pointer;
+      font-family: 'SimSun', serif;
+    }
+
+    /* 结果页面 */
+    #resultScreen {
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      padding: 20px;
+      text-align: center;
+    }
+
+    .result-title {
+      font-size: 4rem;
+      margin-bottom: 40px;
+      font-family: 'SimSun', serif;
+    }
+
+    .result-title.win { color: #ffd700; text-shadow: 0 0 30px rgba(255, 215, 0, 0.5); }
+    .result-title.lose { color: #8B0000; }
+
+    .result-stats {
+      display: flex;
+      gap: 60px;
+      margin: 40px 0;
+    }
+
+    .result-stat {
+      padding: 30px;
+      background: rgba(255,255,255,0.05);
+      border-radius: 20px;
+      min-width: 180px;
+    }
+
+    .result-stat-value { font-size: 3rem; font-weight: bold; color: #ffd700; }
+    .result-stat-label { font-size: 1.2rem; color: #888; margin-top: 10px; }
+
+    /* 重新开始按钮 */
+    .reset-btn {
+      position: fixed;
+      top: 10px;
+      right: 10px;
+      background: rgba(139, 0, 0, 0.6);
+      border: 2px solid #8B0000;
+      color: #ffd700;
+      padding: 10px 20px;
+      border-radius: 15px;
+      cursor: pointer;
+      z-index: 50;
+      font-size: 1rem;
+      font-family: 'SimSun', serif;
+    }
+
+    /* 中央出牌区 */
+    .battle-zone {
+      padding: 20px;
+      text-align: center;
+      background: rgba(0,0,0,0.5);
+      border-top: 2px solid #8B0000;
+      border-bottom: 2px solid #8B0000;
+    }
+
+    .battle-zone-text {
+      font-size: 1.5rem;
+      color: #ffd700;
+      margin-bottom: 15px;
+    }
+  </style>
+</head>
+<body>
+  <!-- 首页 -->
+  <div id="startScreen">
+    <h1 class="game-title">山海经</h1>
+    <p class="game-subtitle">上古神兽 · 卡牌大战</p>
+    <p class="card-count">共计 500+ 神兽卡牌</p>
+    <button class="start-btn" onclick="startGame()">开始对战</button>
+  </div>
+
+  <!-- 游戏页面 -->
+  <div id="gameScreen">
+    <button class="reset-btn" onclick="if(confirm('确定重新开始？')) startGame()">重新开始</button>
+    
+    <!-- 计分板 -->
+    <div class="scoreboard">
+      <div class="score-box shen">
+        <div class="score-label">神兽方</div>
+        <div class="score-value" id="p1Score">0</div>
+      </div>
+      <div class="score-box xiong">
+        <div class="score-label">凶兽方</div>
+        <div class="score-value" id="p2Score">0</div>
+      </div>
+    </div>
+    
+    <!-- 玩家1区域 -->
+    <div class="player-zone bottom">
+      <div class="player-header">
+        <span class="player-name shen">神兽方 - 玩家1</span>
+        <div class="deck-info">
+          <span>剩余: <strong id="p1Remain">0</strong></span>
+          <span>收集: <strong id="p1Collect">0</strong></span>
+        </div>
+      </div>
+      <div style="text-align: center; margin-top: 15px;">
+        <button class="draw-btn" id="p1DrawBtn" onclick="playerDraw(1)">出牌</button>
+      </div>
+    </div>
+    
+    <!-- 战斗区 -->
+    <div class="battle-zone">
+      <div class="battle-zone-text">⚔️ 双方出牌后自动对战 ⚔️</div>
+      <div style="display: flex; gap: 100px; justify-content: center;">
+        <div id="p1BattleCard" style="width: 100px; height: 140px; background: rgba(255,215,0,0.1); border: 3px dashed #ffd700; border-radius: 10px; display: flex; align-items: center; justify-content: center; color: #ffd700;">等待出牌</div>
+        <div style="font-size: 3rem; color: #8B0000;">VS</div>
+        <div id="p2BattleCard" style="width: 100px; height: 140px; background: rgba(139,0,0,0.1); border: 3px dashed #8B0000; border-radius: 10px; display: flex; align-items: center; justify-content: center; color: #8B0000;">等待出牌</div>
+      </div>
+    </div>
+    
+    <!-- 玩家2区域 -->
+    <div class="player-zone top">
+      <div class="player-header">
+        <span class="player-name xiong">凶兽方 - 玩家2</span>
+        <div class="deck-info">
+          <span>剩余: <strong id="p2Remain">0</strong></span>
+          <span>收集: <strong id="p2Collect">0</strong></span>
+        </div>
+      </div>
+      <div style="text-align: center; margin-top: 15px;">
+        <button class="draw-btn" id="p2DrawBtn" onclick="playerDraw(2)">出牌</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 战斗弹窗 -->
+  <div id="battleModal">
+    <div class="battle-title">对战结果</div>
+    <div class="battle-cards">
+      <div class="battle-card" id="battleCard1"></div>
+      <div class="vs-text">VS</div>
+      <div class="battle-card" id="battleCard2"></div>
+    </div>
+    <div class="battle-result" id="battleResult"></div>
+    <button class="continue-btn" onclick="nextRound()">继续下一轮</button>
+  </div>
+
+  <!-- 结果页面 -->
+  <div id="resultScreen">
+    <h1 class="result-title" id="resultTitle">胜利</h1>
+    <div class="result-stats">
+      <div class="result-stat">
+        <div class="result-stat-value" id="finalP1">0</div>
+        <div class="result-stat-label">神兽方收集</div>
+      </div>
+      <div class="result-stat">
+        <div class="result-stat-value" id="finalP2">0</div>
+        <div class="result-stat-label">凶兽方收集</div>
+      </div>
+    </div>
+    <button class="start-btn" onclick="restartGame()">再来一局</button>
+  </div>
+
+  <script src="shanhai-cards.js"></script>
+  <script>
+    // 卡牌图片映射
+    const CARD_IMAGES = {
+      '青龙': 'images/dragon_qinglong.png',
+      '白虎': 'images/tiger_baihu.png',
+      '凤凰': 'images/phoenix_fenghuang.png',
+      '玄武': 'images/turtle_xuanwu.png',
+      '穷奇': 'images/beast_qiongqi.png',
+      '饕餮': 'images/beast_taotie.png',
+      '盘古': 'images/gods_pangu.png',
+      '女娲': 'images/gods_nvwa.png',
+      '鲲': 'images/creature_kunpeng.png',
+      '鹏': 'images/creature_kunpeng.png',
+    };
+
+    // 根据阵营分类卡牌
+    const SHEN_CARDS = ALL_SHANHAI_CARDS.filter(c => c.faction === '神兽' || c.faction === '神灵' || c.faction === '上古');
+    const XIONG_CARDS = ALL_SHANHAI_CARDS.filter(c => c.faction === '凶兽');
+
+    // 游戏状态
+    let state = {
+      p1Deck: [],
+      p2Deck: [],
+      p1Collected: [],
+      p2Collected: [],
+      p1Current: null,
+      p2Current: null,
+      phase: 'waiting',
+    };
+
+    function startGame() {
+      state = {
+        p1Deck: [],
+        p2Deck: [],
+        p1Collected: [],
+        p2Collected: [],
+        p1Current: null,
+        p2Current: null,
+        phase: 'waiting',
+      };
+
+      // 洗牌
+      const shenShuffled = [...SHEN_CARDS].sort(() => Math.random() - 0.5);
+      const xiongShuffled = [...XIONG_CARDS].sort(() => Math.random() - 0.5);
+      
+      // 每方30张
+      state.p1Deck = shenShuffled.slice(0, 30);
+      state.p2Deck = xiongShuffled.slice(0, 30);
+
+      document.getElementById('startScreen').style.display = 'none';
+      document.getElementById('gameScreen').style.display = 'flex';
+      document.getElementById('resultScreen').style.display = 'none';
+      document.getElementById('battleModal').style.display = 'none';
+
+      updateUI();
+    }
+
+    function playerDraw(player) {
+      if (state.phase !== 'waiting') return;
+
+      if (player === 1 && state.p1Deck.length > 0) {
+        const idx = Math.floor(Math.random() * state.p1Deck.length);
+        state.p1Current = state.p1Deck.splice(idx, 1)[0];
+        
+        const el = document.getElementById('p1BattleCard');
+        const card = state.p1Current;
+        const imgUrl = CARD_IMAGES[card.name] || '';
+        
+        if (imgUrl) {
+          el.innerHTML = `<img src="${imgUrl}" style="width:80px;height:110px;object-fit:cover;border-radius:5px;">`;
+        } else {
+          el.innerHTML = `<div style="text-align:center"><div style="font-size:3rem">${card.icon}</div><div style="font-size:0.7rem">${card.name}</div></div>`;
+        }
+        el.style.border = '3px solid #ffd700';
+        el.style.background = 'rgba(255,215,0,0.2)';
+      } 
+      else if (player === 2 && state.p2Deck.length > 0) {
+        const idx = Math.floor(Math.random() * state.p2Deck.length);
+        state.p2Current = state.p2Deck.splice(idx, 1)[0];
+        
+        const el = document.getElementById('p2BattleCard');
+        const card = state.p2Current;
+        const imgUrl = CARD_IMAGES[card.name] || '';
+        
+        if (imgUrl) {
+          el.innerHTML = `<img src="${imgUrl}" style="width:80px;height:110px;object-fit:cover;border-radius:5px;">`;
+        } else {
+          el.innerHTML = `<div style="text-align:center"><div style="font-size:3rem">${card.icon}</div><div style="font-size:0.7rem">${card.name}</div></div>`;
+        }
+        el.style.border = '3px solid #8B0000';
+        el.style.background = 'rgba(139,0,0,0.2)';
+      }
+
+      if (state.p1Current && state.p2Current) {
+        setTimeout(() => startBattle(), 500);
+      }
+
+      updateUI();
+    }
+
+    function startBattle() {
+      state.phase = 'battle';
+      
+      const card1 = state.p1Current;
+      const card2 = state.p2Current;
+
+      let atk1 = card1.atk;
+      let atk2 = card2.atk;
+      let skillActive1 = false;
+      let skillActive2 = false;
+
+      // 30%技能触发
+      if (Math.random() < 0.3) {
+        if (Math.random() < 0.5) {
+          atk1 = Math.floor(atk1 * 1.3);
+          skillActive1 = true;
+        } else {
+          atk2 = Math.floor(atk2 * 1.3);
+          skillActive2 = true;
+        }
+      }
+
+      let winner, resultText, resultClass;
+      
+      if (atk1 > atk2) {
+        winner = 1;
+        resultText = '神兽方获胜！';
+        resultClass = 'win';
+        state.p1Collected.push(card1, card2);
+      } else {
+        winner = 2;
+        resultText = '凶兽方获胜！';
+        resultClass = 'lose';
+        state.p2Collected.push(card1, card2);
+      }
+
+      document.getElementById('battleModal').style.display = 'flex';
+
+      const card1El = document.getElementById('battleCard1');
+      const card2El = document.getElementById('battleCard2');
+      
+      const img1 = CARD_IMAGES[card1.name] || '';
+      const img2 = CARD_IMAGES[card2.name] || '';
+      
+      card1El.className = 'battle-card shen' + (winner === 1 ? ' win' : ' lose');
+      card1El.innerHTML = `
+        ${img1 ? `<img src="${img1}" alt="${card1.name}">` : `<div class="battle-card-icon">${card1.icon}</div>`}
+        <div class="battle-card-name">${card1.name}</div>
+        <div class="battle-card-series">${card1.series} · ${card1.faction}</div>
+        <div class="battle-card-stats">${atk1}</div>
+        <div class="battle-card-skill">${card1.skill}${skillActive1 ? ' ✨' : ''}</div>
+      `;
+      
+      card2El.className = 'battle-card xiong' + (winner === 2 ? ' win' : ' lose');
+      card2El.innerHTML = `
+        ${img2 ? `<img src="${img2}" alt="${card2.name}">` : `<div class="battle-card-icon">${card2.icon}</div>`}
+        <div class="battle-card-name">${card2.name}</div>
+        <div class="battle-card-series">${card2.series} · ${card2.faction}</div>
+        <div class="battle-card-stats">${atk2}</div>
+        <div class="battle-card-skill">${card2.skill}${skillActive2 ? ' ✨' : ''}</div>
+      `;
+      
+      document.getElementById('battleResult').textContent = resultText;
+      document.getElementById('battleResult').className = 'battle-result ' + resultClass;
+      
+      updateUI();
+    }
+
+    function nextRound() {
+      document.getElementById('battleModal').style.display = 'none';
+      
+      state.p1Current = null;
+      state.p2Current = null;
+      state.phase = 'waiting';
+
+      const el1 = document.getElementById('p1BattleCard');
+      const el2 = document.getElementById('p2BattleCard');
+      el1.innerHTML = '等待出牌';
+      el1.style.border = '3px dashed #ffd700';
+      el1.style.background = 'rgba(255,215,0,0.1)';
+      el2.innerHTML = '等待出牌';
+      el2.style.border = '3px dashed #8B0000';
+      el2.style.background = 'rgba(139,0,0,0.1)';
+
+      if (state.p1Deck.length === 0 && state.p2Deck.length === 0) {
+        showResult();
+        return;
+      }
+
+      updateUI();
+    }
+
+    function showResult() {
+      document.getElementById('gameScreen').style.display = 'none';
+      document.getElementById('resultScreen').style.display = 'flex';
+      
+      const p1Score = state.p1Collected.length;
+      const p2Score = state.p2Collected.length;
+      
+      const titleEl = document.getElementById('resultTitle');
+      if (p1Score > p2Score) {
+        titleEl.textContent = '神兽方胜利！';
+        titleEl.className = 'result-title win';
+      } else if (p2Score > p1Score) {
+        titleEl.textContent = '凶兽方胜利！';
+        titleEl.className = 'result-title lose';
+      } else {
+        titleEl.textContent = '平局！';
+        titleEl.className = 'result-title';
+      }
+      
+      document.getElementById('finalP1').textContent = p1Score;
+      document.getElementById('finalP2').textContent = p2Score;
+    }
+
+    function restartGame() {
+      document.getElementById('resultScreen').style.display = 'none';
+      document.getElementById('startScreen').style.display = 'flex';
+    }
+
+    function updateUI() {
+      document.getElementById('p1Score').textContent = state.p1Collected.length;
+      document.getElementById('p2Score').textContent = state.p2Collected.length;
+      document.getElementById('p1Remain').textContent = state.p1Deck.length;
+      document.getElementById('p2Remain').textContent = state.p2Deck.length;
+      document.getElementById('p1Collect').textContent = state.p1Collected.length;
+      document.getElementById('p2Collect').textContent = state.p2Collected.length;
+      
+      document.getElementById('p1DrawBtn').disabled = state.p1Deck.length === 0 || state.phase !== 'waiting';
+      document.getElementById('p2DrawBtn').disabled = state.p2Deck.length === 0 || state.phase !== 'waiting';
+    }
+  </script>
+</body>
+</html>
