@@ -340,6 +340,13 @@
   </style>
 </head>
 <body>
+  <!-- 音频元素 -->
+  <audio id="bgm" src="audio/bgm.mp3" loop preload="auto"></audio>
+  <audio id="battleSound" src="audio/battle.mp3" preload="auto"></audio>
+  <audio id="roarSound" src="audio/roar.mp3" preload="auto"></audio>
+  <audio id="dragonSound" src="audio/dragon.mp3" preload="auto"></audio>
+  <audio id="victorySound" src="audio/victory.mp3" preload="auto"></audio>
+  
   <!-- 首页 -->
   <div id="startScreen">
     <h1 class="game-title">山海经</h1>
@@ -465,7 +472,36 @@
       phase: 'waiting',
     };
 
+    // 背景音乐控制
+    function playBGM() {
+      const bgm = document.getElementById('bgm');
+      bgm.volume = 0.3;
+      bgm.play().catch(() => {});
+    }
+    
+    function playBattleSound() {
+      const sound = document.getElementById('battleSound');
+      sound.volume = 0.5;
+      sound.currentTime = 0;
+      sound.play().catch(() => {});
+    }
+    
+    function playRoar() {
+      const sound = document.getElementById('roarSound');
+      sound.volume = 0.6;
+      sound.currentTime = 0;
+      sound.play().catch(() => {});
+    }
+    
+    function playVictory() {
+      const sound = document.getElementById('victorySound');
+      sound.volume = 0.5;
+      sound.currentTime = 0;
+      sound.play().catch(() => {});
+    }
+
     function startGame() {
+      playBGM();
       state = {
         p1Deck: [],
         p2Deck: [],
@@ -537,6 +573,7 @@
 
     function startBattle() {
       state.phase = 'battle';
+      playBattleSound();
       
       const card1 = state.p1Current;
       const card2 = state.p2Current;
@@ -599,6 +636,10 @@
       
       document.getElementById('battleResult').textContent = resultText;
       document.getElementById('battleResult').className = 'battle-result ' + resultClass;
+      
+      // 播放凶兽吼叫
+      setTimeout(() => playRoar(), 500);
+      setTimeout(() => playVictory(), 1000);
       
       updateUI();
     }
